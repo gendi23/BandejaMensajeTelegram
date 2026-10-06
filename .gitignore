@@ -1,0 +1,19 @@
+# Secrets and local overrides
+.env
+.env.*
+!.env.example
+
+# .NET
+**/bin/
+**/obj/
+
+# Angular / Node
+web/node_modules/
+web/dist/
+web/.angular/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

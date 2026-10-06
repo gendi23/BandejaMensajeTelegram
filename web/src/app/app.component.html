@@ -1,0 +1,130 @@
+<main class="workspace">
+  <aside class="sidebar">
+    <header class="brand-bar">
+      <a class="brand" aria-label="encodelabs bandeja" href="/">
+        <span class="brand-mark">e</span>
+        <span class="brand-name">encode<span>labs</span></span>
+      </a>
+      <span class="brand-tag">INBOX</span>
+    </header>
+
+    <section class="inbox-heading">
+      <div>
+        <p class="eyebrow">ATENCIÓN AL CLIENTE</p>
+        <h1>Bandeja</h1>
+      </div>
+      <span class="unread-total" [attr.aria-label]="totalUnread + ' mensajes sin leer'">{{ totalUnread }}</span>
+    </section>
+
+    <label class="search-box">
+      <span class="search-symbol" aria-hidden="true"></span>
+      <input
+        type="search"
+        placeholder="Buscar una conversación"
+        [ngModel]="searchTerm()"
+        (ngModelChange)="searchTerm.set($event)"
+        aria-label="Buscar una conversación"
+      >
+      <kbd>/</kbd>
+    </label>
+
+    <div class="list-label">
+      <span>CONVERSACIONES</span>
+      <span>{{ conversations().length }}</span>
+    </div>
+
+    <nav class="conversation-list" aria-label="Conversaciones">
+      @for (conversation of filteredConversations; track conversation.chatId) {
+        <button
+          class="contact-row"
+          [class.active]="selected()?.chatId === conversation.chatId"
+          (click)="openConversation(conversation)"
+          [attr.aria-current]="selected()?.chatId === conversation.chatId ? 'page' : null"
+        >
+          <span class="avatar" [class.avatar-alt]="$index % 3 === 1">{{ initials(conversation) }}</span>
+          <span class="contact-copy">
+            <span class="contact-title">
+              <span class="contact-name">{{ conversation.displayName }}</span>
+              <time>{{ conversation.lastMessageAt | date:'HH:mm' }}</time>
+            </span>
+            <span class="contact-preview">{{ conversation.lastMessage || 'Sin mensajes' }}</span>
+          </span>
+          @if (conversation.unreadCount > 0) {
+            <span class="unread-badge">{{ conversation.unreadCount }}</span>
+          }
+        </button>
+      } @empty {
+        <div class="list-empty">
+          <span class="empty-mark">+</span>
+          <p>{{ searchTerm() ? 'No hay coincidencias' : 'Todavía no hay conversaciones' }}</p>
+        </div>
+      }
+    </nav>
+
+    <footer class="sidebar-footer">
+      <span class="status-dot" [class.offline]="connectionState() === 'disconnected'"></span>
+      <span>{{ connectionState() === 'connected' ? 'Conectado en tiempo real' : connectionState() === 'connecting' ? 'Conectando…' : 'Sin conexión en tiempo real' }}</span>
+    </footer>
+  </aside>
+
+  <section class="conversation-pane" aria-label="Conversación seleccionada">
+    @if (selected(); as conversation) {
+      <header class="chat-header">
+        <span class="avatar header-avatar">{{ initials(conversation) }}</span>
+        <div class="chat-identity">
+          <h2>{{ conversation.displayName }}</h2>
+          <p>{{ conversation.username ? '@' + conversation.username : 'Telegram · ' + conversation.chatId }}</p>
+        </div>
+        <div class="channel-label"><span></span> TELEGRAM</div>
+      </header>
+
+      <div class="message-area" aria-live="polite">
+        <div class="history-date"><span>INICIO DE LA CONVERSACIÓN</span></div>
+        @for (message of messages(); track message.id) {
+          <article class="message-line" [class.outgoing-line]="message.isOutgoing">
+            @if (!message.isOutgoing) {
+              <span class="avatar message-avatar">{{ initials(conversation) }}</span>
+            }
+            <div class="message-content">
+              <div class="message-bubble" [class.outgoing]="message.isOutgoing">{{ message.text }}</div>
+              <time class="message-time">
+                {{ message.createdAt | date:'dd/MM/yyyy · HH:mm' }}
+                @if (message.isOutgoing) { <span class="sent-mark" aria-label="Enviado">✓</span> }
+              </time>
+            </div>
+          </article>
+        } @empty {
+          <div class="thread-empty">Los mensajes de esta conversación aparecerán aquí.</div>
+        }
+      </div>
+
+      <form class="reply-area" (submit)="sendReply($event)">
+        <div class="reply-frame">
+          <textarea
+            name="reply"
+            [(ngModel)]="draft"
+            placeholder="Escribe un mensaje…"
+            rows="1"
+            maxlength="4096"
+            aria-label="Escribe una respuesta"
+            (keydown)="handleKeydown($event)"
+          ></textarea>
+          <div class="reply-actions">
+            <span>Enter para enviar · Shift + Enter para nueva línea</span>
+            <button type="submit" class="send-button" [disabled]="!draft.trim() || sending()" aria-label="Enviar respuesta" title="Enviar respuesta">
+              @if (sending()) { <span class="send-spinner"></span> } @else { <span class="send-arrow">↗</span> }
+            </button>
+          </div>
+        </div>
+      </form>
+    } @else {
+      <div class="welcome-state">
+        <div class="welcome-symbol"><span>e</span></div>
+        <p class="eyebrow">ENCODELABS · TELEGRAM</p>
+        <h2>Todo empieza<br>con una conversación.</h2>
+        <p class="welcome-copy">Selecciona un contacto para ver sus mensajes y responder.</p>
+        <div class="welcome-rule"><span></span></div>
+      </div>
+    }
+  </section>
+</main>
